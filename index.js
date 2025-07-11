@@ -23,24 +23,44 @@ app.post("/posts/:id/comments", async (req, res) => {
     {
       id: commentId,
       content,
+      status: "pending", // For moderation service
     },
   ];
 
   // emiting events to Event Bus
-  await axios.post("http://localhost:4005/events", { 
+  await axios.post("http://localhost:4005/events", {
     type: "CommentCreated",
     data: {
       postId: req.params.id,
       id: commentId,
       content,
+      status: "pending", // For moderation service
     },
   });
 
   res.status(201).send(comments[postId]);
 });
 
-app.post("/events", (req, res) => {
+app.post("/events", async (req, res) => {
   console.log("Events are emitted", req.body.type);
+  const { type, data } = req.body;
+  if (type === "CommentModerated") {
+    const { postId, id, status, content } = data;
+    const allComment = comments[postId];
+    const comment = allComment.find((comment) => {
+      return comment.id === id;
+    });
+    comment.status = status;
+    await axios.post("http://localhost:4005/events", {
+      type: "CommentUpdated",
+      data: {
+        id,
+        postId,
+        content,
+        status,
+      },
+    });
+  }
   res.send({});
 });
 

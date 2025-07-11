@@ -17,7 +17,7 @@ app.post("/posts/:id/comments", async (req, res) => {
   const commentId = randomBytes(4).toString("hex");
   const { content } = req.body;
   const postId = req.params.id;
-  const commentsByPost = comments[postId] || [];
+  const commentsByPost = comments[postId] || []; // get all comments related to that post
   comments[postId] = [
     ...commentsByPost,
     {
@@ -27,12 +27,12 @@ app.post("/posts/:id/comments", async (req, res) => {
   ];
 
   // emiting events to Event Bus
-  await axios.post("http://localhost:4005/events", {
+  await axios.post("http://localhost:4005/events", { 
     type: "CommentCreated",
     data: {
+      postId: req.params.id,
       id: commentId,
       content,
-      postId: req.params.id,
     },
   });
 
